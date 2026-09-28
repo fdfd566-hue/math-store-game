@@ -1,11 +1,4 @@
-/* حفظ النتائج: مرآة محلية + إرسال إلى قاعدة بيانات خارجية عند توفرها.
-
-   لإضافة قاعدة بيانات حقيقية (PostgreSQL / Supabase / أي REST API)
-   يكفي ضبط قيمة NEXT_PUBLIC_RESULTS_API على مسار الـ API، مثل:
-   /api/results
-   وسيتم إرسال كل نتيجة بـ POST، وجلب لوحة الصدارة بـ GET من نفس المسار.
-   الشكل المتوقع للاستجابة: مصفوفة من النتائج كما في نوع Score.
-*/
+import { supabase } from "./supabase";
 
 export type Score = {
   id: string;
@@ -19,66 +12,12 @@ export type Score = {
 };
 
 const STORAGE_KEY = "najmat-aljam-board-v1";
-// استبدلي هذا المسار بمسار الـ API الخاص بقاعدة البيانات عند النشر
-const API_URL = "/api/results";
-
-const seed: Score[] = [
-  {
-    id: "seed-1",
-    name: "سارة",
-    points: 95,
-    correct: 10,
-    errors: 0,
-    seconds: 132,
-    level: "متجر نجمة الجمع ⭐",
-    date: "2026-01-12",
-  },
-  {
-    id: "seed-2",
-    name: "نورة",
-    points: 88,
-    correct: 9,
-    errors: 1,
-    seconds: 148,
-    level: "متجر نجمة الجمع ⭐",
-    date: "2026-01-12",
-  },
-  {
-    id: "seed-3",
-    name: "ريم",
-    points: 82,
-    correct: 9,
-    errors: 1,
-    seconds: 171,
-    level: "متجر نجمة الجمع ⭐",
-    date: "2026-01-11",
-  },
-  {
-    id: "seed-4",
-    name: "جواهر",
-    points: 76,
-    correct: 8,
-    errors: 2,
-    seconds: 163,
-    level: "متجر نجمة الجمع ⭐",
-    date: "2026-01-10",
-  },
-  {
-    id: "seed-5",
-    name: "لين",
-    points: 70,
-    correct: 8,
-    errors: 3,
-    seconds: 190,
-    level: "متجر نجمة الجمع ⭐",
-    date: "2026-01-10",
-  },
-];
 
 const readLocal = (): Score[] => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
+
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? (parsed as Score[]) : [];
   } catch {
@@ -88,9 +27,12 @@ const readLocal = (): Score[] => {
 
 const writeLocal = (scores: Score[]) => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(scores.slice(0, 60)));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(scores.slice(0, 60))
+    );
   } catch {
-    /* تجاهل */
+    // تجاهل خطأ التخزين المحلي
   }
 };
 
@@ -105,38 +47,61 @@ export const sortScores = (scores: Score[]): Score[] =>
 
 export const loadBoard = async (): Promise<Score[]> => {
   let remote: Score[] = [];
+
   try {
-    const res = await fetch(API_URL, { headers: { Accept: "application/json" } });
-    if (res.ok) {
-      const data = await res.json();
-      const list = Array.isArray(data) ? data : data?.results;
-      if (Array.isArray(list)) remote = list as Score[];
+    const { data, error } = await supabase
+      .from("scores")
+      .select("*");
+
+    if (!error && Array.isArray(data)) {
+      remote = data as Score[];
+    } else if (error) {
+      console.error("Supabase load error:", error);
     }
-  } catch {
-    /* لا يوجد خادم بعد — نكتفي بالحفظ المحلي */
+  } catch (error) {
+    console.error("Supabase connection error:", error);
   }
-  const merged = [...seed, ...readLocal(), ...remote];
+
+  const local = readLocal();
+
+  const merged = [...local, ...remote];
+
   const seen = new Set<string>();
-  const unique = merged.filter((s) => {
-    const key = `${s.name}-${s.points}-${s.date}-${s.seconds}`;
-    if (seen.has(key)) return false;
+
+  const unique = merged.filter((score) => {
+    const key = `${score.name}-${score.points}-${score.date}-${score.seconds}`;
+
+    if (seen.has(key)) {
+      return false;
+    }
+
     seen.add(key);
     return true;
   });
+
   return sortScores(unique).slice(0, 40);
 };
 
-export const saveScore = async (score: Score): Promise<Score[]> => {
+export const saveScore = async (
+  score: Score
+): Promise<Score[]> => {
+  // حفظ نسخة محلية احتياطية
   const local = readLocal();
   writeLocal([...local, score]);
+
+  // حفظ النتيجة في قاعدة بيانات Supabase
   try {
-    await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(score),
-    });
-  } catch {
-    /* لا يوجد خادم بعد */
+    const { error } = await supabase
+      .from("scores")
+      .insert([score]);
+
+    if (error) {
+      console.error("Supabase save error:", error);
+    }
+  } catch (error) {
+    console.error("Supabase connection error:", error);
   }
+
+  // تحديث لوحة الشرف
   return loadBoard();
 };
