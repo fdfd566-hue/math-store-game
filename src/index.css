@@ -1,0 +1,179 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Baloo Bhaijaan 2", "Tajawal", system-ui, sans-serif;
+  --font-body: "Tajawal", "Baloo Bhaijaan 2", system-ui, sans-serif;
+
+  --color-cream: #fff4e4;
+  --color-cream-deep: #fbe8cf;
+  --color-sugar: #fffaf2;
+  --color-berry: #e8557a;
+  --color-berry-dark: #b23a5b;
+  --color-berry-light: #ffd9e2;
+  --color-ink: #4a2b4d;
+  --color-ink-soft: #7a5c74;
+  --color-mint: #2fb79b;
+  --color-mint-light: #d3f2ea;
+  --color-marigold: #ffb43a;
+  --color-marigold-deep: #e08c12;
+  --color-wood: #c98a5b;
+  --color-wood-dark: #a9683c;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  background-color: #fff4e4;
+  color: #4a2b4d;
+  font-family: "Tajawal", "Baloo Bhaijaan 2", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Sugar-paper grain: faint printed dots on the cream surface */
+.paper-grain {
+  background-image:
+    radial-gradient(circle at 12% 22%, rgba(232, 85, 122, 0.06) 0 2px, transparent 3px),
+    radial-gradient(circle at 68% 12%, rgba(255, 180, 58, 0.09) 0 2px, transparent 3px),
+    radial-gradient(circle at 84% 62%, rgba(47, 183, 155, 0.07) 0 2px, transparent 3px),
+    radial-gradient(circle at 32% 78%, rgba(255, 180, 58, 0.08) 0 2px, transparent 3px);
+  background-size: 260px 260px, 320px 320px, 300px 300px, 280px 280px;
+}
+
+/* Striped canvas awning */
+.awning {
+  background-image: repeating-linear-gradient(
+    90deg,
+    #e8557a 0 42px,
+    #ffe9d2 42px 84px
+  );
+}
+.awning-shadow {
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(178, 58, 91, 0.25) 0 42px,
+    rgba(178, 58, 91, 0.06) 42px 84px
+  );
+}
+
+/* Torn / zig-zag bottom edge of the paper receipt */
+.receipt-edge {
+  --zig: 16px;
+  -webkit-mask-image: linear-gradient(#000 0 0),
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg);
+  mask-image: linear-gradient(#000 0 0),
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg);
+  -webkit-mask-size: 100% calc(100% - var(--zig)), var(--zig) var(--zig);
+  mask-size: 100% calc(100% - var(--zig)), var(--zig) var(--zig);
+  -webkit-mask-position: top, bottom;
+  mask-position: top, bottom;
+  -webkit-mask-repeat: no-repeat, repeat-x;
+  mask-repeat: no-repeat, repeat-x;
+}
+
+.plank {
+  background-color: #c98a5b;
+  background-image: linear-gradient(180deg, #d99b6b 0%, #c98a5b 45%, #a9683c 100%);
+  background-size: cover;
+  background-position: center;
+}
+
+.dashed-rule {
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(74, 43, 77, 0.28) 0 10px,
+    transparent 10px 20px
+  );
+  height: 2px;
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(2deg);
+  }
+}
+.floaty {
+  animation: float-y 5s ease-in-out infinite;
+}
+
+@keyframes star-pop {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15) rotate(18deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+.star-pop {
+  animation: star-pop 0.5s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+@keyframes burst {
+  0% {
+    transform: translate(0, 0) scale(0.2);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--tx), var(--ty)) scale(1);
+    opacity: 0;
+  }
+}
+.burst-particle {
+  animation: burst 1.1s ease-out forwards;
+}
+
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-3deg);
+  }
+  75% {
+    transform: rotate(3deg);
+  }
+}
+.wiggle {
+  animation: wiggle 0.45s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floaty,
+  .star-pop,
+  .burst-particle,
+  .wiggle {
+    animation: none !important;
+  }
+  * {
+    scroll-behavior: auto !important;
+  }
+}
+
+::selection {
+  background: #ffd9e2;
+  color: #4a2b4d;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid #2fb79b;
+  outline-offset: 3px;
+}
